@@ -14,25 +14,30 @@ fn main() -> Result<()> {
     let config = CircuitConfig::standard_recursion_config();
     let mut builder = CircuitBuilder::<F, D>::new(config);
 
-    // The secret value.
-    let value = builder.add_virtual_target();
+    let mut values = Vec::new();
+    let log_max = 4;
 
-    // Registered as a public input (even though it's secret) so we can print out the value later.
-    builder.register_public_input(value);
+    let len : usize = 300000;
 
-    let log_max = 6;
-    builder.range_check(value, log_max);
+    for i in 0..len {
+        let value = builder.add_virtual_target();
+        values.push(value);
+        builder.range_check(values[i], log_max);
+    }
 
     let mut pw = PartialWitness::new();
-    pw.set_target(value, F::from_canonical_usize(42));
-
+    for i in 0..len {
+        pw.set_target(values[i], F::from_canonical_usize(3));
+    }
+    
+    
     let data = builder.build::<C>();
     let proof = data.prove(pw)?;
 
-    println!(
+    /*println!(
         "Value {} is less than 2^{}",
         proof.public_inputs[0], log_max,
-    );
+    );*/
 
     data.verify(proof)
 }
